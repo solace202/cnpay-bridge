@@ -1,0 +1,44 @@
+name: cnpay-bridge
+
+# Sandbox by default: keys are generated at start-up and the official WeChat Pay / Alipay SDKs talk to the
+# built-in sandbox. For live mode set CNPAY_MODE=live and the merchant credentials in .env (see .env.example).
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: cnpay
+      MYSQL_USER: cnpay
+      MYSQL_PASSWORD: ${DB_PASSWORD:-cnpay}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-change-me}
+      TZ: Asia/Shanghai
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    volumes:
+      - mysqldata:/var/lib/mysql
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucnpay -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    image: cnpay-bridge:latest
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/cnpay?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8
+      DB_USER: cnpay
+      DB_PASSWORD: ${DB_PASSWORD:-cnpay}
+      CNPAY_MODE: ${CNPAY_MODE:-sandbox}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8091}
+    ports:
+      - "${APP_HOST_PORT:-8091}:8091"
+
+volumes:
+  mysqldata:
