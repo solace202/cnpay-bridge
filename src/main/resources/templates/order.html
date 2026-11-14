@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Order · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('orders')}"></header>
+<main>
+  <div th:replace="~{layout :: flash}"></div>
+  <div class="report-head">
+    <h1 th:text="${order.merchantOrderNo()}">SHOP-1</h1>
+    <span class="badge" th:classappend="'b-' + ${order.status()}" th:text="${order.status()}">PAID</span>
+    <span class="pv" th:classappend="${order.provider()}" th:text="${order.provider().label()} + ' · ' + ${order.channel()}">WeChat</span>
+  </div>
+  <p class="sub" th:text="${order.description()}">desc</p>
+  <div class="grid21">
+    <div class="card">
+      <h2>Payment</h2>
+      <dl class="kv">
+        <dt>Amount</dt><dd th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(order.amountFen())}">-</dd>
+        <dt>Refunded</dt><dd th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(order.refundedFen())}">-</dd>
+        <dt>out_trade_no</dt><dd class="mono" th:text="${order.outTradeNo()}">-</dd>
+        <dt>Provider trade no</dt><dd class="mono" th:text="${order.providerTradeNo() ?: '—'}">-</dd>
+        <dt>Payer</dt><dd class="mono" th:text="${order.payerAccount() ?: '—'}">-</dd>
+        <dt>Created</dt><dd th:text="${#temporals.format(order.createdAt(), 'yyyy-MM-dd HH:mm:ss')}">-</dd>
+        <dt>Paid</dt><dd th:text="${order.paidAt() != null} ? ${#temporals.format(order.paidAt(), 'yyyy-MM-dd HH:mm:ss')} : '—'">-</dd>
+        <dt>Expires</dt><dd th:text="${#temporals.format(order.expiresAt(), 'yyyy-MM-dd HH:mm:ss')}">-</dd>
+      </dl>
+      <div class="row" style="margin-top:14px">
+        <a class="btn ghost small" th:href="@{/pay/{id}(id=${order.id()})}">Checkout page</a>
+        <form method="post" th:action="@{/admin/orders/{id}/sync(id=${order.id()})}" th:if="${order.status().name() == 'PENDING'}">
+          <button class="ghost small">Query provider</button></form>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Refund</h2>
+      <th:block th:if="${order.status().paid() and order.refundableFen() > 0}">
+        <p class="muted small" th:text="'Refundable now: ¥' + ${refundable} + ' (partial refunds allowed)'">-</p>
+        <form method="post" th:action="@{/admin/orders/{id}/refunds(id=${order.id()})}" class="row">
+          <input type="text" name="amount" placeholder="20.00" style="width:110px" required>
+          <input type="text" name="reason" placeholder="Reason (optional)" style="flex:1">
+          <button>Refund</button>
+        </form>
+      </th:block>
+      <p class="muted small" th:unless="${order.status().paid() and order.refundableFen() > 0}">Nothing to refund.</p>
+      <table style="margin-top:12px" th:if="${!refunds.isEmpty()}">
+        <thead><tr><th>out_refund_no</th><th class="num">Amount</th><th>Status</th><th>Settled</th></tr></thead>
+        <tbody><tr th:each="r : ${refunds}">
+          <td class="mono" th:text="${r.outRefundNo()}">-</td>
+          <td class="num" th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(r.amountFen())}">-</td>
+          <td><span class="badge" th:classappend="'b-' + ${r.status()}" th:text="${r.status()}">-</span></td>
+          <td class="small" th:text="${r.succeededAt() != null} ? ${#temporals.format(r.succeededAt(), 'HH:mm:ss')} : '—'">-</td>
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Notifications &amp; events for this trade</h2>
+    <table>
+      <thead><tr><th>Received</th><th>Event</th><th>Signature</th><th>Result</th><th>Detail</th></tr></thead>
+      <tbody><tr th:each="e : ${events}">
+        <td class="small" th:text="${#temporals.format(e.receivedAt(), 'HH:mm:ss.SSS')}">-</td>
+        <td class="mono" th:text="${e.eventType()}">-</td>
+        <td><span class="badge" th:classappend="${e.signatureValid()} ? 'b-yes' : 'b-no'" th:text="${e.signatureValid()} ? 'verified' : 'invalid'">-</span></td>
+        <td><span class="badge" th:classappend="'b-' + ${e.result()}" th:text="${e.result()}">-</span></td>
+        <td class="small" th:text="${e.detail()}">-</td>
+      </tr>
+      <tr th:if="${events.isEmpty()}"><td colspan="5" class="muted">No notifications yet.</td></tr></tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

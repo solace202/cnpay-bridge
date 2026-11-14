@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Reconciliation report · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('recon')}"></header>
+<main>
+  <div class="report-head">
+    <h1 th:text="${run.provider().label()} + ' · ' + ${run.billDate()}">WeChat Pay</h1>
+    <span class="badge" th:classappend="'b-' + ${run.status()}" th:text="${run.status()}">-</span>
+  </div>
+  <p class="sub" th:text="'Reconciled ' + ${#temporals.format(run.createdAt(), 'yyyy-MM-dd HH:mm:ss')} + ' (Beijing) against the provider trade bill'">-</p>
+  <div class="stats">
+    <div><b th:text="${run.remoteCount()}">0</b><span th:text="'Bill payments · ¥' + ${T(dev.cnpay.money.Money).toYuan(run.remoteFen())}">bill</span></div>
+    <div><b th:text="${run.localCount()}">0</b><span th:text="'Local paid · ¥' + ${T(dev.cnpay.money.Money).toYuan(run.localFen())}">local</span></div>
+    <div><b th:text="${run.matched()}">0</b><span>Matched</span></div>
+    <div><b th:text="${run.differences()}">0</b><span th:text="'Differences · ' + ${run.repaired()} + ' auto-repaired'">diffs</span></div>
+  </div>
+  <div class="callout" th:if="${run.repaired() > 0}" th:text="${run.repaired()} + ' order(s) were paid at the provider but still PENDING locally (lost notification) and have been marked PAID from the bill.'">-</div>
+  <div class="card">
+    <h2>Differences</h2>
+    <table>
+      <thead><tr><th>Kind</th><th>out_trade_no</th><th>Local</th><th class="num">Local amount</th><th>Provider</th><th class="num">Provider amount</th><th>Action</th></tr></thead>
+      <tbody>
+      <tr th:each="i : ${items}">
+        <td><span class="badge" th:classappend="'b-' + ${i.kind()}" th:text="${i.kind()}">-</span></td>
+        <td class="mono" th:text="${i.outTradeNo()}">-</td>
+        <td th:text="${i.localStatus() ?: '—'}">-</td>
+        <td class="num" th:text="${i.localFen() != null} ? '¥' + ${T(dev.cnpay.money.Money).toYuan(i.localFen())} : '—'">-</td>
+        <td th:text="${i.remoteStatus() ?: '—'}">-</td>
+        <td class="num" th:text="${i.remoteFen() != null} ? '¥' + ${T(dev.cnpay.money.Money).toYuan(i.remoteFen())} : '—'">-</td>
+        <td class="small" th:text="${i.action()}">-</td>
+      </tr>
+      <tr th:if="${items.isEmpty()}"><td colspan="7" class="muted">Bill and local records match exactly.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <a th:href="@{/admin/reconciliations}">← All runs</a>
+</main>
+</body>
+</html>

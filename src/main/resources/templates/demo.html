@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Demo shop · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('shop')}"></header>
+<main>
+  <div class="shop">
+    <div class="product">🍵</div>
+    <div class="card">
+      <span class="muted small">DEMO STORE · ships from Shanghai</span>
+      <h1>Matcha starter kit <span class="muted" style="font-weight:500">抹茶入门套装</span></h1>
+      <div class="amount"><small>¥</small>88.00</div>
+      <p class="muted">Pick how the shopper pays. Every option goes through the official WeChat Pay / Alipay SDK,
+        here pointed at the built-in sandbox, which signs responses and sends real-format notifications.</p>
+      <form method="post" th:action="@{/demo/checkout}">
+        <div class="channels">
+          <button th:each="c : ${channels}" type="submit" name="channel" th:value="${c}" th:classappend="${c.provider()}">
+            <th:block th:text="${c.provider().label()}">WeChat Pay</th:block>
+            <span th:text="${c.description()}">Native QR</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+</body>
+</html>

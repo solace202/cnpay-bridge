@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: cnpay-bridge
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/cnpay?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8}
+    username: ${DB_USER:cnpay}
+    password: ${DB_PASSWORD:cnpay}
+  flyway:
+    locations: classpath:db/migration
+  threads:
+    virtual:
+      enabled: true
+  thymeleaf:
+    cache: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  mvc:
+    format:
+      date: iso
+
+server:
+  port: ${PORT:8091}
+  forward-headers-strategy: framework
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+cnpay:
+  # sandbox: keys are generated at start-up and both official SDKs talk to the built-in WeChat Pay / Alipay sandbox.
+  # live:    set the merchant credentials below (see README → "Going live").
+  mode: ${CNPAY_MODE:sandbox}
+  public-url: ${PUBLIC_URL:http://localhost:8091}
+  order-ttl: 30m
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:change-me}
+  wechat:
+    mch-id: ${WECHATPAY_MCH_ID:1900000001}
+    app-id: ${WECHATPAY_APP_ID:wx5f1e9c0d2a7b3c4d}
+    merchant-serial-number: ${WECHATPAY_MERCHANT_SERIAL_NUMBER:}
+    private-key: ${WECHATPAY_PRIVATE_KEY:}                   # apiclient_key.pem (path or PEM text)
+    platform-public-key: ${WECHATPAY_PUBLIC_KEY:}            # pub_key.pem downloaded from the merchant platform
+    platform-public-key-id: ${WECHATPAY_PUBLIC_KEY_ID:}      # PUB_KEY_ID_...
+    api-v3-key: ${WECHATPAY_API_V3_KEY:}
+  alipay:
+    app-id: ${ALIPAY_APP_ID:2021000000000001}
+    private-key: ${ALIPAY_PRIVATE_KEY:}                      # app private key (PKCS#8, base64 or path)
+    alipay-public-key: ${ALIPAY_PUBLIC_KEY:}                 # "支付宝公钥", not the app public key
+    gateway: ${ALIPAY_GATEWAY:https://openapi.alipay.com/gateway.do}
+  sandbox:
+    notify-delay: 1s
+    notify-attempts: 3
+    notify-retry-backoff: 2s
+  poller:
+    interval: 30s
+    min-age: 60s
+  reconciliation:
+    cron: "0 30 10 * * *"
+
+springdoc:
+  swagger-ui:
+    operations-sorter: method
+    tags-sorter: alpha
+  paths-to-match: /api/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    com.wechat.pay: warn

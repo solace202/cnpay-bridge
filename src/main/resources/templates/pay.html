@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Checkout · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('shop')}"></header>
+<main>
+  <div class="flash ok" th:if="${returnVerified == true}">Returned from the Alipay cashier · return signature verified (RSA2). Waiting for the asynchronous notification to confirm payment.</div>
+  <div class="flash err" th:if="${returnVerified == false}">Return parameters failed signature verification — ignoring them.</div>
+  <div class="checkout">
+    <div class="left">
+      <div class="brandbar" th:classappend="${order.provider()}">
+        <i th:text="${order.provider().name() == 'WECHAT'} ? '微' : '支'">微</i>
+        <span th:text="${order.provider().label()}">WeChat Pay</span>
+        <span class="muted small" style="font-weight:500" th:text="${order.channel().description()}">Native</span>
+      </div>
+      <div class="muted small">Order total</div>
+      <div class="amount"><small>¥</small><span th:text="${amount}">88.00</span></div>
+      <div class="muted" th:text="${order.description()}">Matcha starter kit</div>
+      <dl class="kv" style="margin-top:18px">
+        <dt>Merchant order</dt><dd class="mono" th:text="${order.merchantOrderNo()}">SHOP-1</dd>
+        <dt>out_trade_no</dt><dd class="mono" th:text="${order.outTradeNo()}">CN...</dd>
+        <dt>Expires</dt><dd th:text="${#temporals.format(order.expiresAt(), 'yyyy-MM-dd HH:mm')} + ' (Beijing)'">-</dd>
+        <dt th:if="${order.providerTradeNo() != null}">Provider trade no</dt>
+        <dd class="mono" th:if="${order.providerTradeNo() != null}" th:text="${order.providerTradeNo()}">-</dd>
+      </dl>
+      <ol class="steps">
+        <li>Order created via <span class="mono" th:text="${order.provider().name() == 'WECHAT'} ? 'wechatpay-java' : 'alipay-sdk-java'">SDK</span>; request signed with the merchant RSA key</li>
+        <li>Provider response signature verified by the SDK</li>
+        <li>Payment confirmed by a signed asynchronous notification (or the active-query poller)</li>
+      </ol>
+    </div>
+    <div class="right" id="pay-panel" th:classappend="${order.status().paid()} ? 'paid'">
+      <th:block th:if="${order.status().name() == 'PENDING'}">
+        <th:block th:if="${qrSvg != null}">
+          <div class="qr" th:utext="${qrSvg}"></div>
+          <div class="muted small" style="margin-top:10px" th:text="${order.provider().name() == 'WECHAT'} ? 'Open WeChat → Scan' : 'Open Alipay → Scan'">Scan</div>
+          <div class="mono small muted" style="margin-top:4px;word-break:break-all" th:text="${payment.qr_content}">weixin://</div>
+        </th:block>
+        <th:block th:if="${jsapiJson != null}">
+          <div class="muted small" style="align-self:flex-start;margin-bottom:6px">Pass to <span class="mono">wx.requestPayment()</span> inside WeChat:</div>
+          <pre style="text-align:left;width:100%;white-space:pre-wrap;word-break:break-all" th:text="${jsapiJson}">{}</pre>
+        </th:block>
+        <th:block th:if="${payment.kind == 'redirect'}">
+          <p class="muted">The shopper is sent to the provider's cashier:</p>
+          <a class="btn" th:href="${payment.url}" th:classappend="${order.provider().name() == 'WECHAT'} ? 'wx' : 'ali'">Open cashier</a>
+          <div class="mono small muted" style="margin-top:8px;word-break:break-all;max-height:64px;overflow:hidden" th:text="${payment.url}">url</div>
+        </th:block>
+        <div class="status"><span class="dot"></span><span id="status-text">Waiting for payment…</span></div>
+        <form class="sandbox" th:if="${sandbox}" method="post" th:action="@{/pay/{id}/simulate(id=${order.id()})}">
+          <b>Sandbox</b> — no phone needed:
+          <button type="submit" class="small" th:classappend="${order.provider().name() == 'WECHAT'} ? 'wx' : 'ali'" style="margin-top:8px;display:block;width:100%">Simulate scan &amp; pay</button>
+        </form>
+      </th:block>
+      <th:block th:if="${order.status().paid()}">
+        <div class="paidmark">✓</div>
+        <h2>Payment received</h2>
+        <div class="muted" th:text="'Paid ' + ${#temporals.format(order.paidAt(), 'yyyy-MM-dd HH:mm:ss')} + ' (Beijing)'">Paid</div>
+        <div class="mono small muted" style="margin-top:6px" th:text="${order.providerTradeNo()}">4200...</div>
+        <div class="status"><span class="dot"></span><span th:text="${order.status()}">PAID</span></div>
+      </th:block>
+      <th:block th:if="${order.status().name() == 'CLOSED'}">
+        <h2 style="margin-top:40px">Order closed</h2>
+        <p class="muted">This payment order expired or was cancelled.</p>
+      </th:block>
+    </div>
+  </div>
+</main>
+<script th:if="${order.status().name() == 'PENDING'}" th:inline="javascript">
+  const statusUrl = /*[[@{/pay/{id}/status(id=${order.id()})}]]*/ '';
+  setInterval(async () => {
+    const r = await fetch(statusUrl, {cache: 'no-store'});
+    if (!r.ok) return;
+    const s = await r.json();
+    if (s.status !== 'PENDING') location.replace(location.pathname);
+  }, 1500);
+</script>
+</body>
+</html>

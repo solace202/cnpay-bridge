@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Notifications · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('events')}"></header>
+<main>
+  <h1>Notification &amp; event log</h1>
+  <p class="sub">Every callback received, verified or not. WeChat Pay: RSA signature over the Wechatpay-* headers + AES-256-GCM resource decryption (official SDK).
+    Alipay: RSA2 <span class="mono">rsaCheckV1</span>. Redeliveries are deduplicated by notify id; late callbacks after the poller become DUPLICATE.</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Received</th><th>Provider</th><th>Event</th><th>out_trade_no</th><th>Signature</th><th>Result</th><th class="num">Deliv.</th><th>Detail</th></tr></thead>
+      <tbody>
+      <tr th:each="e : ${events}">
+        <td class="small" th:text="${#temporals.format(e.receivedAt(), 'MM-dd HH:mm:ss')}">-</td>
+        <td><span class="pv" th:classappend="${e.provider()}" th:text="${e.provider().label()}">-</span></td>
+        <td class="mono" th:text="${e.eventType()}">-</td>
+        <td class="mono" th:text="${e.outTradeNo() ?: '—'}">-</td>
+        <td><span class="badge" th:classappend="${e.signatureValid()} ? 'b-yes' : 'b-no'" th:text="${e.signatureValid()} ? 'verified' : 'invalid'">-</span></td>
+        <td><span class="badge" th:classappend="'b-' + ${e.result()}" th:text="${e.result()}">-</span></td>
+        <td class="num" th:text="${e.deliveries()}">1</td>
+        <td class="small"><span th:text="${e.detail()}">-</span>
+          <details th:if="${e.payload() != null}"><summary>decrypted payload</summary><pre th:text="${e.payload()}">{}</pre></details></td>
+      </tr>
+      <tr th:if="${events.isEmpty()}"><td colspan="8" class="muted">No notifications yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

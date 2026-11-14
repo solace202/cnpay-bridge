@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Sandbox cashier')}"></head>
+<body style="background:#eef1f5">
+<div class="cashier" th:classappend="${provider}">
+  <div class="hd" th:text="${provider.name() == 'WECHAT'} ? '微信支付 · Sandbox' : '支付宝 · Sandbox cashier'">Sandbox</div>
+  <div class="bd">
+    <th:block th:if="${trade == null}"><p>Unknown trade.</p></th:block>
+    <th:block th:if="${trade != null}">
+      <div class="muted small" th:text="${trade.description()}">item</div>
+      <div class="amount"><small>¥</small><span th:text="${amount}">88.00</span></div>
+      <div class="mono small muted" th:text="${trade.outTradeNo()}">CN</div>
+      <th:block th:if="${result == null and trade.state() == 'NOTPAY'}">
+        <form method="post" style="margin-top:20px">
+          <button type="submit" style="width:100%" th:classappend="${provider.name() == 'WECHAT'} ? 'wx' : 'ali'">Confirm payment</button>
+        </form>
+        <p class="muted small">This page stands in for the provider's own cashier. Paying here triggers the signed asynchronous notification.</p>
+      </th:block>
+      <th:block th:if="${result != null or trade.state() != 'NOTPAY'}">
+        <div class="paidmark" th:if="${trade.paid()}">✓</div>
+        <p th:text="${trade.paid()} ? 'Paid. You can close this page.' : 'Trade is ' + ${trade.state()}">Paid</p>
+      </th:block>
+    </th:block>
+  </div>
+</div>
+</body>
+</html>

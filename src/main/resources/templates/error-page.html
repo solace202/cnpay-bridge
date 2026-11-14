@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Error · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('')}"></header>
+<main><div class="card"><h2>Something went wrong</h2><p th:text="${message}">Error</p><a th:href="@{/}">Back</a></div></main>
+</body>
+</html>

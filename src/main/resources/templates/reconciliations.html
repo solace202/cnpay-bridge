@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Reconciliation · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('recon')}"></header>
+<main>
+  <div th:replace="~{layout :: flash}"></div>
+  <h1>Reconciliation 对账</h1>
+  <p class="sub">Downloads the provider's daily trade bill (WeChat Pay CSV with SHA-1 digest check; Alipay GBK zip), compares it with local orders and refunds,
+    auto-repairs lost notifications and flags everything else. Runs nightly at 10:30 Beijing time for the previous day.</p>
+  <div class="grid2">
+    <div class="card">
+      <h2>Run now</h2>
+      <form method="post" th:action="@{/admin/reconciliations}" class="row">
+        <select name="provider"><option value="WECHAT">WeChat Pay</option><option value="ALIPAY">Alipay</option></select>
+        <input type="date" name="date" th:value="${today}">
+        <button>Download bill &amp; reconcile</button>
+      </form>
+    </div>
+    <div class="card" th:if="${sandbox}">
+      <h2>Sandbox fault injection</h2>
+      <div class="row">
+        <form method="post" th:action="@{/admin/sandbox/drop-notification}"><button class="ghost small">Drop next notification</button></form>
+        <form method="post" th:action="@{/admin/sandbox/orphan-payment}" class="row"><select name="provider"><option value="WECHAT">WeChat</option><option value="ALIPAY">Alipay</option></select><button class="ghost small">Orphan payment</button></form>
+        <form method="post" th:action="@{/admin/sandbox/tamper-amount}" class="row"><select name="provider"><option value="WECHAT">WeChat</option><option value="ALIPAY">Alipay</option></select><button class="ghost small">Tamper amount</button></form>
+      </div>
+      <p class="muted small" th:if="${muted > 0}" th:text="${muted} + ' notification(s) will be dropped'">-</p>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Runs</h2>
+    <table>
+      <thead><tr><th>Run at</th><th>Provider</th><th>Bill date</th><th class="num">Bill</th><th class="num">Local</th><th class="num">Matched</th><th class="num">Diffs</th><th class="num">Repaired</th><th>Status</th></tr></thead>
+      <tbody>
+      <tr th:each="r : ${runs}">
+        <td class="small"><a th:href="@{/admin/reconciliations/{id}(id=${r.id()})}" th:text="${#temporals.format(r.createdAt(), 'MM-dd HH:mm:ss')}">-</a></td>
+        <td><span class="pv" th:classappend="${r.provider()}" th:text="${r.provider().label()}">-</span></td>
+        <td th:text="${r.billDate()}">-</td>
+        <td class="num" th:text="${r.remoteCount()} + ' · ¥' + ${T(dev.cnpay.money.Money).toYuan(r.remoteFen())}">-</td>
+        <td class="num" th:text="${r.localCount()} + ' · ¥' + ${T(dev.cnpay.money.Money).toYuan(r.localFen())}">-</td>
+        <td class="num" th:text="${r.matched()}">-</td>
+        <td class="num" th:text="${r.differences()}">-</td>
+        <td class="num" th:text="${r.repaired()}">-</td>
+        <td><span class="badge" th:classappend="'b-' + ${r.status()}" th:text="${r.status()}">-</span></td>
+      </tr>
+      <tr th:if="${runs.isEmpty()}"><td colspan="9" class="muted">No runs yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

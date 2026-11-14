@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Orders · CnPay Bridge')}"></head>
+<body>
+<header th:replace="~{layout :: top('orders')}"></header>
+<main>
+  <h1>Orders</h1>
+  <p class="sub">The 50 most recent payment orders across WeChat Pay and Alipay. Amounts are CNY, stored as integer fen.</p>
+  <div class="stats">
+    <div><b th:text="${paidCount}">0</b><span>Paid</span></div>
+    <div><b th:text="${pendingCount}">0</b><span>Pending</span></div>
+    <div><b th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(grossFen)}">¥0</b><span>Gross collected</span></div>
+    <div><b th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(refundedFen)}">¥0</b><span>Refunded</span></div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Created</th><th>Provider</th><th>Channel</th><th>Merchant order</th><th>out_trade_no</th><th class="num">Amount</th><th class="num">Refunded</th><th>Status</th></tr></thead>
+      <tbody>
+      <tr th:each="o : ${orders}">
+        <td class="small" th:text="${#temporals.format(o.createdAt(), 'MM-dd HH:mm:ss')}">-</td>
+        <td><span class="pv" th:classappend="${o.provider()}" th:text="${o.provider().label()}">WeChat Pay</span></td>
+        <td class="small" th:text="${o.channel()}">-</td>
+        <td class="mono"><a th:href="@{/admin/orders/{id}(id=${o.id()})}" th:text="${o.merchantOrderNo()}">-</a></td>
+        <td class="mono" th:text="${o.outTradeNo()}">-</td>
+        <td class="num" th:text="'¥' + ${T(dev.cnpay.money.Money).toYuan(o.amountFen())}">-</td>
+        <td class="num muted" th:text="${o.refundedFen() > 0} ? '¥' + ${T(dev.cnpay.money.Money).toYuan(o.refundedFen())} : '—'">-</td>
+        <td><span class="badge" th:classappend="'b-' + ${o.status()}" th:text="${o.status()}">PAID</span></td>
+      </tr>
+      <tr th:if="${orders.isEmpty()}"><td colspan="8" class="muted">No orders yet — create one from the demo shop or POST /api/orders.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

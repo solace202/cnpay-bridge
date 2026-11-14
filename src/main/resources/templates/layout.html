@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title}">CnPay Bridge</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="top" th:fragment="top(active)">
+  <div class="in">
+    <a class="logo" th:href="@{/}">CnPay<span>Bridge</span></a>
+    <span class="tag" th:if="${sandbox}">SANDBOX · locally generated keys</span>
+    <nav class="nav">
+      <a th:href="@{/}" th:classappend="${active == 'shop'} ? 'on'">Demo shop</a>
+      <a th:href="@{/admin}" th:classappend="${active == 'orders'} ? 'on'">Orders</a>
+      <a th:href="@{/admin/events}" th:classappend="${active == 'events'} ? 'on'">Notifications</a>
+      <a th:href="@{/admin/reconciliations}" th:classappend="${active == 'recon'} ? 'on'">Reconciliation</a>
+      <a th:href="@{/swagger-ui.html}">API</a>
+    </nav>
+  </div>
+</header>
+<div th:fragment="flash">
+  <div class="flash ok" th:if="${ok}" th:text="${ok}"></div>
+  <div class="flash err" th:if="${error}" th:text="${error}"></div>
+</div>
+</body>
+</html>
